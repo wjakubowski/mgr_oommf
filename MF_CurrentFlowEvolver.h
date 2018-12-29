@@ -469,34 +469,7 @@ class LinksBetweenTwoInterfaces {
 		OC_REAL8m Rs_p;
 		OC_REAL8m torq_const_eta;
 		OC_REAL8m A;
-		
-
-
-	/*
-	OC_REAL8m bJ0;  // STT Field like term
-    OC_REAL8m bJ1;  // STT Field like term
-    OC_REAL8m bJ2;  // STT Field like term
-    OC_REAL8m aJ_s, aJ_p;
-    OC_REAL8m RA_ap; // R*A
-    OC_REAL8m RA_p;
-    OC_REAL8m Rs_ap; //R * s (of square)
-    OC_REAL8m Rs_p;
-    OC_REAL8m R_p;
-    OC_REAL8m aJ;
-    OC_REAL8m eta0;		// STT efficiency, typically 0.7
-	OC_REAL8m torq_const_eta;
-    OC_REAL8m A;
-    OC_REAL8m fit_param1;
-    OC_REAL8m fit_param2;
-    OC_REAL8m fit_param3;
-	*/
 };	
-
-
-	//######################################################
-	//ZMIENNE
-    OC_REAL8m ABCD;
-    OC_INT2 numer_of_barier;
 
 	//###################################################### 
 	vector<LinksBetweenTwoInterfaces> linksss;

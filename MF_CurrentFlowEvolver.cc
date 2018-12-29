@@ -53,16 +53,6 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
     hbar = 1.054e-34;
     el = 1.6e-19;
     mu0 = 4.0*PI*1.0e-7;
-    //bJ0 = GetRealInitValue("bJ0",0.);
-    //bJ1 = GetRealInitValue("bJ1",0.);
-    //bJ2 = GetRealInitValue("bJ2",0.);
-    //eta0 = GetRealInitValue("eta",0.7);
-    //######################################################
-    ABCD = GetRealInitValue("ABCD",1111.0);
-	std::cout << "sczytane ABCD wynosi: " << ABCD << std::endl;
-	numer_of_barier = GetIntInitValue("numer_of_barier",1);
-	std::cout << "sczytane numer_of_barier wynosi: " << numer_of_barier << std::endl;
-    //######################################################
 
     //////eta(u)
     fit_type = GetIntInitValue("R_ap_dependence_type",0);
@@ -227,31 +217,6 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
 	{
 		RegisterBoundary(inter_names[i],bdryParam[i]);
 	}
-	
-	
-	/*vector<String> bdryParamTopDown = CheckBoundaryParameters(inter_names[0],split(inter_parameters[0]));
-	vector<String> bdryParamBottomUp = CheckBoundaryParameters(inter_names[3],split(inter_parameters[3]));
-	boundarys = vector<Boundary>();
-	switch(numer_of_barier)
-	{
-		case 2:
-		{
-			vector<String> bdryParamSpacerUp = CheckBoundaryParameters(inter_names[1],split(inter_parameters[1]));
-			vector<String> bdryParamSpacerDown = CheckBoundaryParameters(inter_names[2],split(inter_parameters[2]));
-			
-			RegisterAtlas(bdryParamTopDown);
-			RegisterAtlas(bdryParamBottomUp);
-			RegisterAtlas(bdryParamSpacerUp);
-			RegisterBoundary(bdryParamSpacerUp);
-			RegisterBoundary(bdryParamSpacerDown);
-		}
-		case 1:
-		{
-			RegisterBoundary(bdryParamTopDown);
-			RegisterBoundary(bdryParamBottomUp);
-		}
-		break;
-	}*/
 
     min_timestep=GetRealInitValue("min_timestep",0.);
     max_timestep=GetRealInitValue("max_timestep",1e-10);
@@ -402,8 +367,6 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
                     &MF_CurrentFlowEvolver::UpdateDerivedOutputs);
     Signal_output.Setup(this,InstanceName(),"Signal","SI units",0,
                         &MF_CurrentFlowEvolver::UpdateDerivedOutputs);
-    ABCD_output.Setup(this,InstanceName(),"ABCD","ABCD unit",0,
-                      &MF_CurrentFlowEvolver::UpdateDerivedOutputs);
     VerifyAllInitArgsUsed();
 
     // Reserve space for temp_state; see Step() method below
@@ -785,7 +748,6 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
             !state.GetDerivedData("magnetoresistance",mr_output.cache.value) ||
             !state.GetDerivedData("Signal",Signal_output.cache.value) ||
             !state.GetDerivedData("Timestep lower bound",dummy_value) ||
-            !state.GetDerivedData("ABCD",ABCD_output.cache.value) ||
             (dm_dt_output.GetCacheRequestCount()>0 && dm_dt_output.cache.state_id != state.Id()) ||
             (conductance_output.GetCacheRequestCount()>0 && conductance_output.cache.state_id != state.Id()) ||
             (current_density_output.GetCacheRequestCount()>0 && current_density_output.cache.state_id != state.Id()) ||
