@@ -522,14 +522,14 @@ void MF_CurrentFlowEvolver::FillLinkList
     // lower surface.
 
 	cout << "Function FillLinkList" << endl;
-	linksss = vector<LinksBetweenTwoInterfaces>();		
+	boundaryLinks = vector<LinksBetweenTwoInterfaces>();		
 	
 	for(int i=0;i<linksNames.size();++i)
 	{
 		LinkTwoSurfaces(mesh,linksParameters[i]);
 	}
 	
-	columnResistances = vector <OC_REAL8m> (linksss[0].links.size());
+	columnResistances = vector <OC_REAL8m> (boundaryLinks[0].links.size());
 	/*
 	for(int i=0;i<boundarys.size();++i)
 		cout << boundarys[i].ptrMagAtl->region << "\t" << boundarys[i].ptrMagAtl->getAtlas() << "\t" << boundarys[i].bdry_value << "\t" << boundarys[i].bdry_side << endl;
@@ -574,18 +574,18 @@ void MF_CurrentFlowEvolver::LinkTwoSurfaces(const Oxs_RectangularMesh* mesh,
         throw Oxs_Ext::Error(msg.c_str());
     }
 
-	linksss.push_back(LinksBetweenTwoInterfaces());
-	vector<Oxs_STT_NP_LinkParams> & links = linksss.back().links;
+	boundaryLinks.push_back(LinksBetweenTwoInterfaces());
+	vector<Oxs_STT_NP_LinkParams> & links = boundaryLinks.back().links;
 	
-	linksss.back().A = 0;
+	boundaryLinks.back().A = 0;
 	//MANDATORY PARAMETERS
 	try{
-		linksss.back().bJ0 = atof(params_map.at("bJ0").c_str());
-		linksss.back().bJ1 = atof(params_map.at("bJ1").c_str());
-		linksss.back().bJ2 = atof(params_map.at("bJ2").c_str());
-		linksss.back().eta0 = atof(params_map.at("eta0").c_str());
-		linksss.back().R_p = atof(params_map.at("R_P").c_str());
-		linksss.back().fit_param1 = atof(params_map.at("R_AP").c_str());
+		boundaryLinks.back().bJ0 = atof(params_map.at("bJ0").c_str());
+		boundaryLinks.back().bJ1 = atof(params_map.at("bJ1").c_str());
+		boundaryLinks.back().bJ2 = atof(params_map.at("bJ2").c_str());
+		boundaryLinks.back().eta0 = atof(params_map.at("eta0").c_str());
+		boundaryLinks.back().R_p = atof(params_map.at("R_P").c_str());
+		boundaryLinks.back().fit_param1 = atof(params_map.at("R_AP").c_str());
 	} 
 	catch(invalid_argument & bad_conversion)
 	{
@@ -597,9 +597,9 @@ void MF_CurrentFlowEvolver::LinkTwoSurfaces(const Oxs_RectangularMesh* mesh,
 	}
 	//OPTIONAL PARAMETERS
 	try{
-		linksss.back().fit_param2 = atof(params_map.at("R_ap_param2").c_str());
-		linksss.back().fit_param3 = atof(params_map.at("R_ap_param3").c_str());
-		linksss.back().A = atof(params_map.at("junction_surface").c_str());
+		boundaryLinks.back().fit_param2 = atof(params_map.at("R_ap_param2").c_str());
+		boundaryLinks.back().fit_param3 = atof(params_map.at("R_ap_param3").c_str());
+		boundaryLinks.back().A = atof(params_map.at("junction_surface").c_str());
 	} 
 	catch(invalid_argument & bad_conversion)
 	{
@@ -795,9 +795,9 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
             Signal = GetSignal(state);
 
 		
-		for(int link_index=0;link_index<linksss.size();++link_index)
+		for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 		{
-			for(vector<Oxs_STT_NP_LinkParams>::const_iterator it=linksss[link_index].links.begin(); it!=linksss[link_index].links.end(); ++it)
+			for(vector<Oxs_STT_NP_LinkParams>::const_iterator it=boundaryLinks[linkIndex].links.begin(); it!=boundaryLinks[linkIndex].links.end(); ++it)
 			{
 				con[it->index1].Set(0.0,0.0,it->conductance);
 				con[it->index2].Set(0.0,0.0,it->conductance);
@@ -874,40 +874,40 @@ void MF_CurrentFlowEvolver::ComputeConductance(const Oxs_SimState& state)
 //4 - exponentian
 //default - constant
 //note that fit_param1,2,3 are for values of resistance not resistance times surface
-	for(int link_index=0;link_index<linksss.size();++link_index)
+	for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 	{
 		switch(fit_type)
 		{
 		case 1:
 			if (Signal < 0)
 			{
-				linksss[link_index].RA_ap = (-linksss[link_index].fit_param1*Signal+linksss[link_index].fit_param2)*linksss[link_index].A;
+				boundaryLinks[linkIndex].RA_ap = (-boundaryLinks[linkIndex].fit_param1*Signal+boundaryLinks[linkIndex].fit_param2)*boundaryLinks[linkIndex].A;
 			}
 			else
 			{
-				linksss[link_index].RA_ap = (linksss[link_index].fit_param1*Signal+linksss[link_index].fit_param2)*linksss[link_index].A;
+				boundaryLinks[linkIndex].RA_ap = (boundaryLinks[linkIndex].fit_param1*Signal+boundaryLinks[linkIndex].fit_param2)*boundaryLinks[linkIndex].A;
 			}
 			break;
 		case 2:
-			linksss[link_index].RA_ap = (2*linksss[link_index].fit_param1*linksss[link_index].fit_param2/
-					(3.14*(linksss[link_index].fit_param2*linksss[link_index].fit_param2+4*Signal*Signal))+linksss[link_index].fit_param3)*linksss[link_index].A;
+			boundaryLinks[linkIndex].RA_ap = (2*boundaryLinks[linkIndex].fit_param1*boundaryLinks[linkIndex].fit_param2/
+					(3.14*(boundaryLinks[linkIndex].fit_param2*boundaryLinks[linkIndex].fit_param2+4*Signal*Signal))+boundaryLinks[linkIndex].fit_param3)*boundaryLinks[linkIndex].A;
 			break;
 		case 3:
-			linksss[link_index].RA_ap = (linksss[link_index].fit_param1*exp(-Signal*Signal/linksss[link_index].fit_param2)+linksss[link_index].fit_param3)*linksss[link_index].A;
+			boundaryLinks[linkIndex].RA_ap = (boundaryLinks[linkIndex].fit_param1*exp(-Signal*Signal/boundaryLinks[linkIndex].fit_param2)+boundaryLinks[linkIndex].fit_param3)*boundaryLinks[linkIndex].A;
 			break;
 		case 4:
 			if (Signal < 0)
 			{
-				linksss[link_index].RA_ap = (linksss[link_index].fit_param1*exp(Signal/linksss[link_index].fit_param2)+linksss[link_index].fit_param3)*linksss[link_index].A;
+				boundaryLinks[linkIndex].RA_ap = (boundaryLinks[linkIndex].fit_param1*exp(Signal/boundaryLinks[linkIndex].fit_param2)+boundaryLinks[linkIndex].fit_param3)*boundaryLinks[linkIndex].A;
 			}
 			else
 			{
-				linksss[link_index].RA_ap = (linksss[link_index].fit_param1*exp(-Signal/linksss[link_index].fit_param2)+linksss[link_index].fit_param3)*linksss[link_index].A;
+				boundaryLinks[linkIndex].RA_ap = (boundaryLinks[linkIndex].fit_param1*exp(-Signal/boundaryLinks[linkIndex].fit_param2)+boundaryLinks[linkIndex].fit_param3)*boundaryLinks[linkIndex].A;
 			}
 			break;
 		case 5:
-			linksss[link_index].RA_ap = (2*linksss[link_index].fit_param1*linksss[link_index].fit_param2/
-					(3.14*(linksss[link_index].fit_param2*linksss[link_index].fit_param2+4*Signal*Signal))+linksss[link_index].fit_param3)*linksss[link_index].A;
+			boundaryLinks[linkIndex].RA_ap = (2*boundaryLinks[linkIndex].fit_param1*boundaryLinks[linkIndex].fit_param2/
+					(3.14*(boundaryLinks[linkIndex].fit_param2*boundaryLinks[linkIndex].fit_param2+4*Signal*Signal))+boundaryLinks[linkIndex].fit_param3)*boundaryLinks[linkIndex].A;
 			break;
 		default:
 			break;
@@ -920,33 +920,33 @@ void MF_CurrentFlowEvolver::ComputeConductance(const Oxs_SimState& state)
 	fill(columnResistances.begin(), columnResistances.end(), 0);
 	OC_INDEX i;
 	OC_INDEX j;
-	//cout << "linksss.size(): " << linksss.size() << endl;
-	//cout << "linksss[0].links.size(): " << linksss[0].links.size() << endl;
-	for(int link_index=0;link_index<linksss.size();++link_index)
+	//cout << "boundaryLinks.size(): " << boundaryLinks.size() << endl;
+	//cout << "boundaryLinks[0].links.size(): " << boundaryLinks[0].links.size() << endl;
+	for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 	{
-		for(int it=0; it<linksss[link_index].links.size(); ++it)
+		for(int it=0; it<boundaryLinks[linkIndex].links.size(); ++it)
 		{
-			i = linksss[link_index].links[it].index1;
-			j = linksss[link_index].links[it].index2;
+			i = boundaryLinks[linkIndex].links[it].index1;
+			j = boundaryLinks[linkIndex].links[it].index2;
 			if(Ms_inverse_[i]==0. || Ms_inverse_[j]==0.) {
-				linksss[link_index].links[it].conductance = 0;    // Ms=0; skip
+				boundaryLinks[linkIndex].links[it].conductance = 0;    // Ms=0; skip
 				continue;
 			}
 			p=(spin_[i].x*spin_[j].x+spin_[i].y*spin_[j].y+spin_[i].z*spin_[j].z)/(sqrt(pow(spin_[i].x,2)+pow(spin_[i].y,2)+pow(spin_[i].z,2))*sqrt(pow(spin_[j].x,2)+pow(spin_[j].y,2)+pow(spin_[j].z,2)));
-			linksss[link_index].links[it].conductance = 1/(linksss[link_index].Rs_p+(linksss[link_index].Rs_ap-linksss[link_index].Rs_p)/2*(1-p));
+			boundaryLinks[linkIndex].links[it].conductance = 1/(boundaryLinks[linkIndex].Rs_p+(boundaryLinks[linkIndex].Rs_ap-boundaryLinks[linkIndex].Rs_p)/2*(1-p));
 			
-			columnResistances[it] += 1.0 / linksss[link_index].links[it].conductance;
+			columnResistances[it] += 1.0 / boundaryLinks[linkIndex].links[it].conductance;
 			/*if(!(it%100)){
 				cout << "it: " << it << endl;
-				cout << "linksss[link_index].links[it].conductance: " << linksss[link_index].links[it].conductance << endl;
-				cout << "1.0 / linksss[link_index].links[it].conductance: " << 1.0 / linksss[link_index].links[it].conductance << endl;
-				cout << "1.0 / linksss[link_index].links[it].conductance: " << 1.0 / linksss[link_index].links[it].conductance << endl;
+				cout << "boundaryLinks[linkIndex].links[it].conductance: " << boundaryLinks[linkIndex].links[it].conductance << endl;
+				cout << "1.0 / boundaryLinks[linkIndex].links[it].conductance: " << 1.0 / boundaryLinks[linkIndex].links[it].conductance << endl;
+				cout << "1.0 / boundaryLinks[linkIndex].links[it].conductance: " << 1.0 / boundaryLinks[linkIndex].links[it].conductance << endl;
 				cout << "columnResistances[it]: " << columnResistances[it] << endl;
 			}*/
 		}
 	}
 	//cout << "DODAWANIE ROWNOLEGLYCH REZYSTANCJI" << endl;
-	for(int it=0; it<linksss[0].links.size(); ++it)
+	for(int it=0; it<boundaryLinks[0].links.size(); ++it)
 	{
 		conductance += 1.0 / columnResistances[it];
 		/*if(!(it%100)){
@@ -989,27 +989,27 @@ void MF_CurrentFlowEvolver::UpdateSpinTorqueOutputs(const Oxs_SimState& state)
         Oxs_MeshValue<ThreeVector>& filed_like_stt = field_like_torque_output.cache.value;
         filed_like_stt.AdjustSize(mesh);
 
-		for(int link_index=0;link_index<linksss.size();++link_index)
+		for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 		{
-			for(vector<Oxs_STT_NP_LinkParams>::const_iterator it=linksss[link_index].links.begin(); it!=linksss[link_index].links.end(); ++it) {
+			for(vector<Oxs_STT_NP_LinkParams>::const_iterator it=boundaryLinks[linkIndex].links.begin(); it!=boundaryLinks[linkIndex].links.end(); ++it) {
 				i = it->index1;
 				j = it->index2;
 				if(Ms_inverse_[i]==0. || Ms_inverse_[j]==0.) continue; // Ms=0; skip
-				linksss[link_index].aJ_s = linksss[link_index].torq_const_eta/Ms[i];
-				linksss[link_index].aJ_p = linksss[link_index].torq_const_eta/Ms[j];
+				boundaryLinks[linkIndex].aJ_s = boundaryLinks[linkIndex].torq_const_eta/Ms[i];
+				boundaryLinks[linkIndex].aJ_p = boundaryLinks[linkIndex].torq_const_eta/Ms[j];
 				
 				if (work_mode == 0)
 					curden = Signal*it->conductance/(mesh->EdgeLengthX()*mesh->EdgeLengthY());
 				else if (work_mode == 1)
 					curden = Signal*it->conductance/(mesh->EdgeLengthX()*mesh->EdgeLengthY())/conductance;
 				else
-					curden = Signal/linksss[link_index].RA_p;
+					curden = Signal/boundaryLinks[linkIndex].RA_p;
 
 				STT_paralle_s = spin_[i];
 				STT_paralle_s ^= spin_[j];			// M_switch x M_pol
 				STT_paralle_s ^= spin_[i];			// -M_switch x (M_switch x M_pol)
 				STT_paralle_s *= curden;				// aJ*M_switch x (M_switch x M_pol), aJ is field unit, A/m
-				STT_paralle_s *= linksss[link_index].aJ_s;
+				STT_paralle_s *= boundaryLinks[linkIndex].aJ_s;
 
 				scratch3 = gamma[i]*STT_paralle_s;
 
@@ -1017,19 +1017,19 @@ void MF_CurrentFlowEvolver::UpdateSpinTorqueOutputs(const Oxs_SimState& state)
 				STT_paralle_p ^= spin_[i];			// M_pol x M_switch
 				STT_paralle_p ^= spin_[j];			// -M_pol x (M_pol x M_switch)
 				STT_paralle_p *= curden;				// -aJ*M_switchx(M_switch x M_pol), aJ is field unit, A/m
-				STT_paralle_p *= linksss[link_index].aJ_p;
+				STT_paralle_p *= boundaryLinks[linkIndex].aJ_p;
 
 				scratch3p = -gamma[j]*STT_paralle_p;	// STT for polarizer layer
 
 				STT_perp_s = spin_[i];
 				STT_perp_s ^= spin_[j];				// M_switch x M_pol
-				STT_perp_s *= (linksss[link_index].bJ0 + linksss[link_index].bJ1*curden + linksss[link_index].bJ2*curden*curden);
+				STT_perp_s *= (boundaryLinks[linkIndex].bJ0 + boundaryLinks[linkIndex].bJ1*curden + boundaryLinks[linkIndex].bJ2*curden*curden);
 
 				scratch4 = gamma[i]*STT_perp_s;
 
 				STT_perp_p = spin_[j];
 				STT_perp_p ^= spin_[i];				//  M_pol x M_switch
-				STT_perp_p *= (linksss[link_index].bJ0 + linksss[link_index].bJ1*curden + linksss[link_index].bJ2*curden*curden);
+				STT_perp_p *= (boundaryLinks[linkIndex].bJ0 + boundaryLinks[linkIndex].bJ1*curden + boundaryLinks[linkIndex].bJ2*curden*curden);
 
 				scratch4p = -gamma[i]*STT_perp_p;
 
@@ -1182,8 +1182,8 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
     torq_const = hbar/(2*el*mu0)/mesh->EdgeLengthZ();
 	
 	
-	for(int link_index=0;link_index<linksss.size();++link_index)
-		linksss[link_index].torq_const_eta = torq_const*linksss[link_index].eta0;
+	for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
+		boundaryLinks[linkIndex].torq_const_eta = torq_const*boundaryLinks[linkIndex].eta0;
 	
 	
 	
@@ -1211,15 +1211,15 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
         // has changed.
         FillLinkList(mesh);
         UpdateMeshArrays(mesh);
-		for(int link_index=0;link_index<linksss.size();++link_index){
-			if (linksss[link_index].A==0.)
+		for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex){
+			if (boundaryLinks[linkIndex].A==0.)
 			{
-				linksss[link_index].A=linksss[0].links.size()*cellsurf;
+				boundaryLinks[linkIndex].A=boundaryLinks[0].links.size()*cellsurf;
 			}
-			linksss[link_index].RA_ap = linksss[link_index].A*linksss[link_index].fit_param1;
-			linksss[link_index].RA_p = linksss[link_index].A*linksss[link_index].R_p;
-			linksss[link_index].Rs_p = linksss[link_index].RA_p/cellsurf;
-			linksss[link_index].Rs_ap = linksss[link_index].RA_ap/cellsurf;
+			boundaryLinks[linkIndex].RA_ap = boundaryLinks[linkIndex].A*boundaryLinks[linkIndex].fit_param1;
+			boundaryLinks[linkIndex].RA_p = boundaryLinks[linkIndex].A*boundaryLinks[linkIndex].R_p;
+			boundaryLinks[linkIndex].Rs_p = boundaryLinks[linkIndex].RA_p/cellsurf;
+			boundaryLinks[linkIndex].Rs_ap = boundaryLinks[linkIndex].RA_ap/cellsurf;
 		}
 
     }
@@ -1266,27 +1266,27 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
     Signal = GetSignal(state_);
     ComputeConductance(state_);
 	//########################################################
-	for(int link_index=0;link_index<linksss.size();++link_index)
+	for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 	{
-		for(vector<Oxs_STT_NP_LinkParams>::const_iterator it=linksss[link_index].links.begin(); it!=linksss[link_index].links.end(); ++it) {
+		for(vector<Oxs_STT_NP_LinkParams>::const_iterator it=boundaryLinks[linkIndex].links.begin(); it!=boundaryLinks[linkIndex].links.end(); ++it) {
 			i = it->index1;
 			j = it->index2;
 			if(Ms_inverse_[i]==0. || Ms_inverse_[j]==0.) continue; // Ms=0; skip
-			linksss[link_index].aJ_s = linksss[link_index].torq_const_eta/Ms_[i];
-			linksss[link_index].aJ_p = linksss[link_index].torq_const_eta/Ms_[j];
+			boundaryLinks[linkIndex].aJ_s = boundaryLinks[linkIndex].torq_const_eta/Ms_[i];
+			boundaryLinks[linkIndex].aJ_p = boundaryLinks[linkIndex].torq_const_eta/Ms_[j];
 			if (work_mode == 0)
 				curden = Signal*it->conductance/(mesh->EdgeLengthX()*mesh->EdgeLengthY());
 			else if (work_mode == 1)
 				curden = Signal*it->conductance/(mesh->EdgeLengthX()*mesh->EdgeLengthY())/conductance;
 			else
-				curden = Signal/linksss[link_index].RA_p;
+				curden = Signal/boundaryLinks[linkIndex].RA_p;
 
 
 			STT_paralle_s = spin_[i];
 			STT_paralle_s ^= spin_[j];			// M_switch x M_pol
 			STT_paralle_s ^= spin_[i];			// -M_switch x (M_switch x M_pol)
 			STT_paralle_s *= curden;				// aJ*M_switch x (M_switch x M_pol), aJ is field unit, A/m
-			STT_paralle_s *= linksss[link_index].aJ_s;
+			STT_paralle_s *= boundaryLinks[linkIndex].aJ_s;
 
 			scratch3 = gamma[i]*STT_paralle_s;
 
@@ -1294,19 +1294,19 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
 			STT_paralle_p ^= spin_[i];			// M_pol x M_switch
 			STT_paralle_p ^= spin_[j];			// -M_pol x (M_pol x M_switch)//
 			STT_paralle_p *= curden;				// -aJ*M_switchx(M_switch x M_pol), aJ is field unit, A/m
-			STT_paralle_p *= linksss[link_index].aJ_p;
+			STT_paralle_p *= boundaryLinks[linkIndex].aJ_p;
 
 			scratch3p = -gamma[j]*STT_paralle_p;	// STT for polarizer layer
 
 			STT_perp_s = spin_[i];
 			STT_perp_s ^= spin_[j];				// M_switch x M_pol
-			STT_perp_s *= (linksss[link_index].bJ0 + linksss[link_index].bJ1*curden + linksss[link_index].bJ2*curden*curden);
+			STT_perp_s *= (boundaryLinks[linkIndex].bJ0 + boundaryLinks[linkIndex].bJ1*curden + boundaryLinks[linkIndex].bJ2*curden*curden);
 
 			scratch4 = gamma[i]*STT_perp_s;
 
 			STT_perp_p = spin_[j];
 			STT_perp_p ^= spin_[i];				//  M_pol x M_switch
-			STT_perp_p *= (linksss[link_index].bJ0 + linksss[link_index].bJ1*curden + linksss[link_index].bJ2*curden*curden);
+			STT_perp_p *= (boundaryLinks[linkIndex].bJ0 + boundaryLinks[linkIndex].bJ1*curden + boundaryLinks[linkIndex].bJ2*curden*curden);
 
 			scratch4p = -gamma[i]*STT_perp_p;
 			
