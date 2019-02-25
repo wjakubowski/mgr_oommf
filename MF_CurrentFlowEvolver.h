@@ -67,8 +67,6 @@ typedef Oxs_SplitList Nb_SplitList;
 #define Nb_ParseTclCommandLineRequest(a,b,c) Oxs_ParseTclCommandLineRequest((a),(b),(c))
 #endif
 
-//////////////////////////////////////////////////////////////////
-
 struct Oxs_STT_NP_LinkParams {
     OC_INDEX index1,index2;
     OC_REAL8m conductance;
@@ -96,10 +94,10 @@ OC_BOOL operator==(const Oxs_STT_NP_LinkParams&,
                    const Oxs_STT_NP_LinkParams&);
 				   
 /*    Oxs_OwnedPointer<Oxs_Atlas> atlas_top,atlas_bottom,atlas_spacer;
-    String region_top,region_bottom,region_spacer;
+    string region_top,region_bottom,region_spacer;
     Oxs_OwnedPointer<Oxs_ScalarField> bdry_top_down,bdry_bottom_up,bdry_spacer_up,bdry_spacer_down;
     OC_REAL8m bdry_top_down_value, bdry_bottom_up_value,bdry_spacer_up_value,bdry_spacer_down_value;
-    String bdry_top_down_side,bdry_bottom_up_side,bdry_spacer_up_side,bdry_spacer_down_side;*/
+    string bdry_top_down_side,bdry_bottom_up_side,bdry_spacer_up_side,bdry_spacer_down_side;*/
 
 class MF_CurrentFlowEvolver:public Oxs_TimeEvolver {
 private:
@@ -215,9 +213,7 @@ private:
 
     Oxs_ScalarOutput<MF_CurrentFlowEvolver> ABCD_output;
 
-
 //Caculation variables
-
 
     ThreeVector scratch;
     ThreeVector scratch1; //Oersted
@@ -358,44 +354,26 @@ private:
     MF_CurrentFlowEvolver(const MF_CurrentFlowEvolver&);
     MF_CurrentFlowEvolver& operator=(const MF_CurrentFlowEvolver&);
 
-    //OC_REAL8m bJ0;  // STT Field like term
-    //OC_REAL8m bJ1;  // STT Field like term
-    //OC_REAL8m bJ2;  // STT Field like term
-    //OC_REAL8m aJ_s, aJ_p;
     OC_REAL8m curden;
-    //OC_REAL8m RA_ap; // R*A
-    //OC_REAL8m RA_p;
-    //OC_REAL8m Rs_ap; //R * s (of square)
-    //OC_REAL8m Rs_p;
-    //OC_REAL8m R_p;
     OC_REAL8m work_mode;
-    //OC_REAL8m eta0;		// STT efficiency, typically 0.7
     OC_REAL8m hbar;
     OC_REAL8m el;
     OC_REAL8m mu0;
     OC_REAL8m cellsurf;
     OC_REAL8m torq_const;
-    //OC_REAL8m torq_const_eta;
-/////////////// eta(u)
 
     OC_REAL8m conductance; // global value of conductance
 
-    //OC_REAL8m A; // surface of interface A=boundaryLinks[0].links.size()*cellsurf; line 1200
     int fit_type;
-    //OC_REAL8m fit_param1; // global if not ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-    //OC_REAL8m fit_param2;
-    //OC_REAL8m fit_param3;
-/////////////// end eta(u)
 
 //######################################################
-//KLASY
 
 class MagneticAtlas{
 	public:
 	Oxs_Atlas * ptrAtlas;
-	String region;
+	string region;
 	MagneticAtlas(){}
-	MagneticAtlas(Oxs_Atlas * ptrAtlas, String region)
+	MagneticAtlas(Oxs_Atlas * ptrAtlas, string region)
 	{
 		this -> region = region;
 		this -> ptrAtlas = ptrAtlas;
@@ -403,8 +381,6 @@ class MagneticAtlas{
 	Oxs_Atlas * getAtlas(){
 		return ptrAtlas;
 	}
-	
-	
 };
 
 class Boundary {
@@ -412,10 +388,10 @@ class Boundary {
 	string boundaryName;
 	Oxs_ScalarField * ptrBdry;
 	OC_REAL8m bdry_value;
-	String bdry_side;
+	string bdry_side;
 	MagneticAtlas * ptrMagAtl;
 	Boundary(){}
-	Boundary(string boundaryName, Oxs_ScalarField * bdry, OC_REAL8m bdry_value, String bdry_side, MagneticAtlas * magAtl)
+	Boundary(string boundaryName, Oxs_ScalarField * bdry, OC_REAL8m bdry_value, string bdry_side, MagneticAtlas * magAtl)
 	{
 		this -> boundaryName = boundaryName;
 		this -> ptrBdry = bdry;
@@ -441,11 +417,11 @@ class Boundary {
 	}
 };
 
-class LinksBetweenTwoInterfaces {
+class LinksBetweenTwoBoundaries {
 	public:
 		vector<Oxs_STT_NP_LinkParams> links;   
-		LinksBetweenTwoInterfaces(){}
-		LinksBetweenTwoInterfaces(vector<Oxs_STT_NP_LinkParams> & links)
+		LinksBetweenTwoBoundaries(){}
+		LinksBetweenTwoBoundaries(vector<Oxs_STT_NP_LinkParams> & links)
 			:links(links){}  
 		
 		OC_REAL8m bJ0;  // STT Field like term
@@ -471,19 +447,14 @@ class LinksBetweenTwoInterfaces {
 		OC_REAL8m A;
 };	
 
-	//###################################################### 
-	vector<LinksBetweenTwoInterfaces> boundaryLinks;
-	vector<Boundary> boundarys;
+	vector<LinksBetweenTwoBoundaries> boundaryLinks;
+	vector<Boundary> boundaries;
 	vector<MagneticAtlas> magneticAtlases;
 	vector<string> linksNames;
 	vector< map<string,string> > linksParameters;
 	vector< OC_REAL8m > columnResistances;
-	//###################################################### 
-	
-	//######################################################
-	//FUNKCJE
 
-	map<string,string> CheckBoundaryParameters(String boundaryName,map<string,string> boundaryParameters);
+	map<string,string> CheckBoundaryParameters(string boundaryName,map<string,string> boundaryParameters);
 	
 	void RegisterAtlas(map<string,string> & boundaryParameters);
 	

@@ -61,15 +61,7 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
     //3 - gaussain
     //4 - exponentian
     //default - constant
-    //fit_param1 = GetRealInitValue("R_AP",0.);
-    //fit_param2 = GetRealInitValue("R_ap_param2",0.); // is not used in constant fit
-    //fit_param3 = GetRealInitValue("R_ap_param3",0.); // is not used in constant, linear and lorentz fit
-    //note that fit_param1,2,3 are for values of resistance not resistance times surface
-    //A = GetRealInitValue("junction_surface",0);
 
-
-    //R_p = GetRealInitValue("R_P",0.);
-    //RA_ap = GetRealInitValue("RA_ap",0.);
     work_mode = GetRealInitValue("current_mode",0.);
     Signal = 0.;
     OC_REAL8m vmult = GetRealInitValue("multiplier",1.0);
@@ -79,7 +71,7 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
     if(HasInitValue("signal_profile"))
     {
         has_V_profile = 1;
-        String cmdoptreq = GetStringInitValue("signal_profile_args",
+        string cmdoptreq = GetStringInitValue("signal_profile_args",
                                               "stage stage_time total_time");
         V_profile_opts.push_back(Nb_TclCommandLineOption("stage",1));
         V_profile_opts.push_back(Nb_TclCommandLineOption("stage_time",1));
@@ -93,9 +85,8 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
     }
     else
     {
-
         // Load vrange data
-        vector<String> vrange;
+        vector<string> vrange;
         FindRequiredInitValue("signal_range",vrange);
 
         // Build up Vapp vector from vrange data
@@ -162,9 +153,7 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
         DeleteInitValue("signal_range");
     }
 
-	
-	//CheckInitValueParamCount("Interfaces",4);
-	vector<String> interfaces,inter_names,inter_parameters,links_parameters_buffer;
+	vector<string> interfaces,inter_names,inter_parameters,links_parameters_buffer;
 	
 	FindRequiredInitValue("Interfaces",interfaces);
 	DeleteInitValue("Interfaces");
@@ -184,14 +173,6 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
 		for(int j=0;j<params_key_value.size();j+=2)
 			params_map[params_key_value[j]] = params_key_value[j+1];
 		linksParameters.push_back(params_map);
-	}
-	
-	cout << "Readed Links paramters are:" << endl;
-	for(int i=0;i<linksNames.size();++i){
-		cout << "Link name \"" << linksNames[i] << "\"" << endl;
-		cout << "Link parameters:" << endl;
-		for (map<string,string>::iterator it=linksParameters[i].begin(); it!=linksParameters[i].end(); ++it)
-			cout << it->first << "\t" << it->second << endl;
 	}
 	
 	for(int i=0;i<linksNames.size();++i){
@@ -311,7 +292,7 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
     start_dm *= PI/180.; // Convert from deg to rad
 
     stage_init_step_control = SISC_AUTO;  // Safety
-    String stage_start = GetStringInitValue("stage_start","auto");
+    string stage_start = GetStringInitValue("stage_start","auto");
     Oxs_ToLower(stage_start);
     if(stage_start.compare("start_dm")==0) {
         stage_init_step_control = SISC_START_DM;
@@ -326,7 +307,7 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
                              " start_dm, continuous, or auto.");
     }
 
-    String method = GetStringInitValue("method","rkf54");
+    string method = GetStringInitValue("method","rkf54");
     Oxs_ToLower(method); // Do case insensitive match
     if(method.compare("rk2")==0) {
         rkstep_ptr = &MF_CurrentFlowEvolver::TakeRungeKuttaStep2;
@@ -374,7 +355,7 @@ MF_CurrentFlowEvolver::MF_CurrentFlowEvolver(
     director->ReserveSimulationStateRequest(1);
 }
 
-map<string,string> MF_CurrentFlowEvolver::CheckBoundaryParameters(String boundaryName,map<string,string> boundaryParameters)
+map<string,string> MF_CurrentFlowEvolver::CheckBoundaryParameters(string boundaryName,map<string,string> boundaryParameters)
 {
 	// Import parameter string should be a 10 element
 	// list of name-value pairs:
@@ -385,59 +366,47 @@ map<string,string> MF_CurrentFlowEvolver::CheckBoundaryParameters(String boundar
 	//         scalarvalue  scalar field level surface reference value
 	//         scalarside   either "+" or "-", denoting inner surface side
 	
-	cout << "CheckBoundaryParameters for: \"" + boundaryName + "\" with parameters:" << endl;
-	for (map<string,string>::iterator it=boundaryParameters.begin(); it!=boundaryParameters.end(); ++it)
-		cout << it->first << " : " << it->second << endl; 
-	
 	if(! (boundaryParameters.count("atlas") &&
 			boundaryParameters.count("region") &&
 			boundaryParameters.count("scalarfield") &&
 			boundaryParameters.count("scalarvalue") &&
 			boundaryParameters.count("scalarside") ))
 	{
-		String msg = String("Bad surface parameter block, inside "
+		string msg = string("Bad surface parameter block, inside "
 					   "Oxs_MF_CurrentFlowEvolver mif Specify block for object. ReadBoundaryParameters")
-				+  String(InstanceName()) + String(":");
+				+  string(InstanceName()) + string(":");
 			msg += boundaryName;
-			msg += String(" block is bad.");
+			msg += string(" block is bad.");
 			throw Oxs_Ext::Error(msg.c_str());
 	}
 	return boundaryParameters;
-	
 }
 
 void MF_CurrentFlowEvolver::RegisterAtlas(map<string,string>  & boundaryParameters)
 {
-	cout << "Functon RegisterAtlas. Check if MagneticAtlas: \"" << boundaryParameters["region"] << 
-		"\" is registrated." << endl << "Other parameters:" << endl;
-	for (map<string,string>::iterator it=boundaryParameters.begin(); it!=boundaryParameters.end(); ++it)
-		cout << it->first << " : " << it->second << endl; 
-	
 	bool alreadyRegistrated = false;
 	for(int i=0;i<magneticAtlases.size();++i)
 		if(magneticAtlases[i].region == boundaryParameters["region"])
 			alreadyRegistrated = true;
 	if(alreadyRegistrated)
 	{
-		cout << "MagneticAtlas \"" << boundaryParameters["region"] << "\" already registrated." << endl;
-		return;		
+		string msg = "MagneticAtlas \"" + boundaryParameters["region"] + "\" already registrated.";
+		throw Oxs_Ext::Error(msg.c_str());	
 	}
 	else
 	{
-		cout << "MagneticAtlas \"" << boundaryParameters["region"] << "\" not registrated yet." << endl;
-		cout << "Register MagneticAtlas \"" << boundaryParameters["region"] << "\"." << endl;
-		vector<String> params;
+		vector<string> params;
 		params.push_back(boundaryParameters["region"]);
 		Oxs_OwnedPointer<Oxs_Atlas> temp;
 		OXS_GET_EXT_OBJECT(params,Oxs_Atlas,temp);
 		magneticAtlases.push_back(MagneticAtlas(temp.GetPtr(),boundaryParameters["region"]));
 		if(magneticAtlases.back().getAtlas()->GetRegionId(magneticAtlases.back().region) == -1)
 		{
-			String msg=
-				String("Bad surface parameter block, inside "
+			string msg=
+				string("Bad surface parameter block, inside "
 					   "Oxs_MF_CurrentFlowEvolver mif Specify block for object. RegisterAtlas ")
-				+  String(InstanceName()) + String(":");
-			msg += String(" block is bad.");
+				+  string(InstanceName()) + string(":");
+			msg += string(" block is bad.");
 			throw Oxs_Ext::Error(msg.c_str());
 		}
 	}
@@ -453,41 +422,33 @@ MF_CurrentFlowEvolver::MagneticAtlas * MF_CurrentFlowEvolver::getMagneticAtlasBy
 
 MF_CurrentFlowEvolver::Boundary * MF_CurrentFlowEvolver::getBoundaryByName(string boundaryName)
 {
-	for(int i=0;i<boundarys.size();++i)
-		if(boundarys[i].boundaryName == boundaryName)
-			return & boundarys[i];
+	for(int i=0;i<boundaries.size();++i)
+		if(boundaries[i].boundaryName == boundaryName)
+			return & boundaries[i];
 	throw Oxs_Ext::Error("Can't find Boundary with name: \"" + boundaryName +"\".");
 }
 
 
 void MF_CurrentFlowEvolver::RegisterBoundary(string & boundaryName, map<string,string> & boundaryParameters)
 {
-	cout << "Function RegisterBoundary. Register boundary: \"" + boundaryName+ "\" with parameters:" << endl;
-	for (map<string,string>::iterator it=boundaryParameters.begin(); it!=boundaryParameters.end(); ++it)
-		cout << it->first << " : " << it->second << endl; 
-
 	Nb_SplitList param_strings;
-	vector<String> params;
+	vector<string> params;
 	param_strings.Split(boundaryParameters["scalarfield"].c_str());
 	param_strings.FillParams(params);
 	Oxs_OwnedPointer<Oxs_ScalarField> temp;
 	OXS_GET_EXT_OBJECT(params,Oxs_ScalarField,temp);	
-	boundarys.push_back(
+	boundaries.push_back(
 		Boundary(boundaryName,
 			temp.GetPtr(),
 			Nb_Atof(boundaryParameters["scalarvalue"].c_str()),
 			boundaryParameters["scalarside"],
 			getMagneticAtlasByRegion(boundaryParameters["region"])));
 	
-	//cout << "Looking for: " << boundaryParameters["region"] << " and is " << boundarys.back().ptrMagAtl->region << endl;
-	
-	if(boundarys.back().bdry_side.compare("+")!=0 && boundarys.back().bdry_side.compare("-")!=0)
+	if(boundaries.back().bdry_side.compare("+")!=0 && boundaries.back().bdry_side.compare("-")!=0)
 	{
-		String msg=
-			String("Bad surface parameter block, inside "
-				   "Oxs_MF_CurrentFlowEvolver mif Specify block for object. RegisterBoundary")
-			+  String(InstanceName()) + String(":");
-		msg += String(" block is bad.");
+		string msg = "Bad surface parameter block, inside "
+						"Oxs_MF_CurrentFlowEvolver mif Specify block for object. RegisterBoundary"
+						+ string(InstanceName()) + ": block is bad.";
 		throw Oxs_Ext::Error(msg.c_str());
 	}
 }
@@ -520,9 +481,6 @@ void MF_CurrentFlowEvolver::FillLinkList
     // In the second picture, all the outer cells in the top
     // surface get paired up with the outer elements in the
     // lower surface.
-
-	cout << "Function FillLinkList" << endl;
-	boundaryLinks = vector<LinksBetweenTwoInterfaces>();		
 	
 	for(int i=0;i<linksNames.size();++i)
 	{
@@ -530,29 +488,17 @@ void MF_CurrentFlowEvolver::FillLinkList
 	}
 	
 	columnResistances = vector <OC_REAL8m> (boundaryLinks[0].links.size());
-	/*
-	for(int i=0;i<boundarys.size();++i)
-		cout << boundarys[i].ptrMagAtl->region << "\t" << boundarys[i].ptrMagAtl->getAtlas() << "\t" << boundarys[i].bdry_value << "\t" << boundarys[i].bdry_side << endl;
-	sort(boundarys.begin(),boundarys.end(),Boundary::sorter);
-	for(int i=0;i<boundarys.size();++i)
-		cout << boundarys[i].ptrMagAtl->region << "\t" << boundarys[i].ptrMagAtl->getAtlas() << "\t" << boundarys[i].bdry_value << "\t" << boundarys[i].bdry_side << endl;
-
-	for(int i=0;i<boundarys.size();i+=2)
-		LinkTwoSurfaces(mesh,boundarys[i],boundarys[i+1]);
-	*/
 }
 
 void MF_CurrentFlowEvolver::LinkTwoSurfaces(const Oxs_RectangularMesh* mesh,
 												map<string,string> & params_map)
 {
-	cout << "Function LinkTwoSurfaces" << endl;
 	string bdryName1,bdryName2;
 	bdryName1 = params_map["interface1"];
 	bdryName2 = params_map["interface2"];
 	Boundary & bdry1 = *getBoundaryByName(bdryName1);
 	Boundary & bdry2 = *getBoundaryByName(bdryName2);
-	cout << "Link together: \"" + bdry1.boundaryName + "\" and \"" + bdry2.boundaryName + "\"." << endl;
-	
+
 	// Get cell lists for each surface
     vector<OC_INDEX> bdry1_cells,bdry2_cells;
     mesh->BoundaryList(* bdry1.ptrMagAtl->getAtlas(),bdry1.ptrMagAtl->region,* bdry1.getBdry(),bdry1.bdry_value,bdry1.bdry_side,
@@ -560,21 +506,19 @@ void MF_CurrentFlowEvolver::LinkTwoSurfaces(const Oxs_RectangularMesh* mesh,
     mesh->BoundaryList(* bdry2.ptrMagAtl->getAtlas(),bdry2.ptrMagAtl->region,* bdry2.getBdry(),bdry2.bdry_value,bdry2.bdry_side,
                        bdry2_cells);
     if(bdry1_cells.empty()) {
-        String msg =
-            String("Empty bdry/surface list with current mesh"
-                   " detected in Oxs_STT_NP_Energy::FillLinkList()"
-                   " routine of object ") + String(InstanceName()) +" of bdry/surface \""+ bdryName1 +"\"";
+        string msg = "Empty bdry/surface list with current mesh"
+						" detected in Oxs_STT_NP_Energy::FillLinkList()"
+						" routine of object " + string(InstanceName()) + " of bdry/surface \""+ bdryName1 +"\"";
         throw Oxs_Ext::Error(msg.c_str());
     }
 	if(bdry2_cells.empty()) {
-        String msg =
-            String("Empty bdry/surface list with current mesh"
-                   " detected in Oxs_STT_NP_Energy::FillLinkList()"
-                   " routine of object ") + String(InstanceName()) +" of bdry/surface \""+ bdryName1 +"\"";
+        string msg = "Empty bdry/surface list with current mesh"
+						" detected in Oxs_STT_NP_Energy::FillLinkList()"
+						" routine of object " + string(InstanceName()) +" of bdry/surface \""+ bdryName1 +"\"";
         throw Oxs_Ext::Error(msg.c_str());
     }
 
-	boundaryLinks.push_back(LinksBetweenTwoInterfaces());
+	boundaryLinks.push_back(LinksBetweenTwoBoundaries());
 	vector<Oxs_STT_NP_LinkParams> & links = boundaryLinks.back().links;
 	
 	boundaryLinks.back().A = 0;
@@ -688,7 +632,6 @@ void MF_CurrentFlowEvolver::LinkTwoSurfaces(const Oxs_RectangularMesh* mesh,
         else
             throw Oxs_Ext::Error("Badly defined surfaces for magnetoresistance calculations in MF_CurrentFlowEvolver.");
     }
-
 }
 
 OC_REAL8m MF_CurrentFlowEvolver::EvaluateVProfileScript
@@ -712,9 +655,8 @@ OC_REAL8m MF_CurrentFlowEvolver::EvaluateVProfileScript
     V_profile_cmd.SaveInterpResult();
     V_profile_cmd.Eval();
     if(V_profile_cmd.GetResultListSize()!=1) {
-        String msg
-            = String("Return script value is not a single scalar: ")
-              + V_profile_cmd.GetWholeResult();
+        string msg = "Return script value is not a single scalar: "
+						+ V_profile_cmd.GetWholeResult();
         V_profile_cmd.RestoreInterpResult();
         throw Oxs_Ext::Error(this,msg.c_str());
     }
@@ -775,8 +717,6 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
                         dE_dt_output.cache.value,timestep_lower_bound);
         dm_dt_output.cache.state_id=state.Id();
 
-
-//ComputeConductance(state);
         const Oxs_RectangularMesh* mesh
             = dynamic_cast<const Oxs_RectangularMesh*>(state.mesh);
         const OC_INDEX size = mesh->Size();
@@ -786,7 +726,6 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
         con.AdjustSize(mesh);
         cur.AdjustSize(mesh);
 
-
         if (has_V_profile == 1)
             Signal = EvaluateVProfileScript(state.stage_number,
                                             state.stage_elapsed_time,
@@ -794,7 +733,6 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
         else
             Signal = GetSignal(state);
 
-		
 		for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 		{
 			for(vector<Oxs_STT_NP_LinkParams>::const_iterator it=boundaryLinks[linkIndex].links.begin(); it!=boundaryLinks[linkIndex].links.end(); ++it)
@@ -814,8 +752,6 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
 
         conductance_output.cache.state_id=state.Id();
         current_density_output.cache.state_id=state.Id();
-
-
 
         mr_output.cache.value = 1/conductance;
         Signal_output.cache.value = Signal;
@@ -920,8 +856,7 @@ void MF_CurrentFlowEvolver::ComputeConductance(const Oxs_SimState& state)
 	fill(columnResistances.begin(), columnResistances.end(), 0);
 	OC_INDEX i;
 	OC_INDEX j;
-	//cout << "boundaryLinks.size(): " << boundaryLinks.size() << endl;
-	//cout << "boundaryLinks[0].links.size(): " << boundaryLinks[0].links.size() << endl;
+	
 	for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 	{
 		for(int it=0; it<boundaryLinks[linkIndex].links.size(); ++it)
@@ -936,26 +871,12 @@ void MF_CurrentFlowEvolver::ComputeConductance(const Oxs_SimState& state)
 			boundaryLinks[linkIndex].links[it].conductance = 1/(boundaryLinks[linkIndex].Rs_p+(boundaryLinks[linkIndex].Rs_ap-boundaryLinks[linkIndex].Rs_p)/2*(1-p));
 			
 			columnResistances[it] += 1.0 / boundaryLinks[linkIndex].links[it].conductance;
-			/*if(!(it%100)){
-				cout << "it: " << it << endl;
-				cout << "boundaryLinks[linkIndex].links[it].conductance: " << boundaryLinks[linkIndex].links[it].conductance << endl;
-				cout << "1.0 / boundaryLinks[linkIndex].links[it].conductance: " << 1.0 / boundaryLinks[linkIndex].links[it].conductance << endl;
-				cout << "1.0 / boundaryLinks[linkIndex].links[it].conductance: " << 1.0 / boundaryLinks[linkIndex].links[it].conductance << endl;
-				cout << "columnResistances[it]: " << columnResistances[it] << endl;
-			}*/
 		}
 	}
-	//cout << "DODAWANIE ROWNOLEGLYCH REZYSTANCJI" << endl;
+
 	for(int it=0; it<boundaryLinks[0].links.size(); ++it)
 	{
 		conductance += 1.0 / columnResistances[it];
-		/*if(!(it%100)){
-			cout << "it: " << it << endl;
-			cout << "columnResistances[it]: " << columnResistances[it] << endl;
-			cout << "1.0 / columnResistances[it]: " << 1.0 / columnResistances[it] << endl;
-			cout << "conductance: " << conductance << endl;
-			cout << "resistance: " << 1.0/conductance << endl;
-		}*/
 	}
 };
 
@@ -1037,15 +958,11 @@ void MF_CurrentFlowEvolver::UpdateSpinTorqueOutputs(const Oxs_SimState& state)
 				stt[j]=scratch3p;
 				filed_like_stt[i] = scratch4;
 				filed_like_stt[j] = scratch4p;
-
 			}
 		}
-		
         spin_torque_output.cache.state_id = state.Id();
         field_like_torque_output.cache.state_id = state.Id();
-
     }
-
 }
 
 OC_REAL8m MF_CurrentFlowEvolver::GetSignal(const Oxs_SimState& state)
@@ -1111,7 +1028,6 @@ OC_BOOL MF_CurrentFlowEvolver::Init()
 MF_CurrentFlowEvolver::~MF_CurrentFlowEvolver()
 {}
 
-
 void MF_CurrentFlowEvolver::UpdateMeshArrays(const Oxs_RectangularMesh* mesh)
 {
     mesh_id = 0; // Mark update in progress
@@ -1119,8 +1035,8 @@ void MF_CurrentFlowEvolver::UpdateMeshArrays(const Oxs_RectangularMesh* mesh)
     const Oxs_RectangularMesh* rmesh
         = dynamic_cast<const Oxs_RectangularMesh*>(mesh);
     if(rmesh==NULL) {
-        String msg="Import mesh to MF_CurrentFlowEvolver::UpdateMeshArrays"
-                   " is not an Oxs_RectangularMesh object.";
+        string msg="Import mesh to MF_CurrentFlowEvolver::UpdateMeshArrays"
+					" is not an Oxs_RectangularMesh object.";
         throw Oxs_Ext::Error(msg.c_str());
     }
     Xstep = rmesh->EdgeLengthX();
@@ -1180,13 +1096,10 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
 
 	//torq_const = hbar/(2*el*mu0)*eta0/mesh->EdgeLengthZ();
     torq_const = hbar/(2*el*mu0)/mesh->EdgeLengthZ();
-	
-	
+
 	for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 		boundaryLinks[linkIndex].torq_const_eta = torq_const*boundaryLinks[linkIndex].eta0;
-	
-	
-	
+
     // Move mxH_ data into dm_dt_.  This is fallback behavior for
     // the case where mxH_ and dm_dt_ are not physically the same
     // storage.  The operator=() member function of Oxs_MeshValue
@@ -1221,7 +1134,6 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
 			boundaryLinks[linkIndex].Rs_p = boundaryLinks[linkIndex].RA_p/cellsurf;
 			boundaryLinks[linkIndex].Rs_ap = boundaryLinks[linkIndex].RA_ap/cellsurf;
 		}
-
     }
 
     // Compute dm_dt and dE_dt.  For details, see mjd's NOTES III,
@@ -1252,11 +1164,8 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
             scratch *= cell_alpha*cell_mgamma; //scratch = -alpha*gamma_LL*m^(m^H)
 
             dm_dt_[i] += scratch; //dm_dt=-gamma_LL*m^H-alpha*gamma_LL*m^(m^H)
-
-
         }
     }
-
 
     if (has_V_profile == 1)
         Signal = EvaluateVProfileScript(state_.stage_number,
@@ -1265,7 +1174,7 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
     else
     Signal = GetSignal(state_);
     ComputeConductance(state_);
-	//########################################################
+
 	for(int linkIndex=0;linkIndex<boundaryLinks.size();++linkIndex)
 	{
 		for(vector<Oxs_STT_NP_LinkParams>::const_iterator it=boundaryLinks[linkIndex].links.begin(); it!=boundaryLinks[linkIndex].links.end(); ++it) {
@@ -1312,10 +1221,8 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
 			
 			dm_dt_[i] += (scratch3 + scratch4);
 			dm_dt_[j] += (scratch3p + scratch4p);
-
 		}
 	}
-	//########################################################
 
     for(i=0; i<size; i++) {
         OC_REAL8m dm_dt_sq = dm_dt_[i].MagSq();
@@ -1358,7 +1265,6 @@ void MF_CurrentFlowEvolver::Calculate_dm_dt(const Oxs_SimState& state_,
         // zero.  Punt.
         min_timestep_ = 1.0;
     }
-
     return;
 }
 
