@@ -211,8 +211,6 @@ private:
     Oxs_ScalarOutput<MF_CurrentFlowEvolver> Signal_output;
     Oxs_ScalarOutput<MF_CurrentFlowEvolver> mr_area_output;
 
-    Oxs_ScalarOutput<MF_CurrentFlowEvolver> ABCD_output;
-
 //Caculation variables
 
     ThreeVector scratch;

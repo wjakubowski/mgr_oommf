@@ -679,8 +679,7 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
             = delta_E_output.cache.state_id
               = mr_output.cache.state_id
                 = Signal_output.cache.state_id
-                  = ABCD_output.cache.state_id
-                    = 0;  // Mark change in progress
+                  = 0;  // Mark change in progress
 
     OC_REAL8m dummy_value;
     if(!state.GetDerivedData("Max dm/dt",max_dm_dt_output.cache.value) ||
@@ -755,7 +754,6 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
 
         mr_output.cache.value = 1/conductance;
         Signal_output.cache.value = Signal;
-        ABCD_output.cache.value = Signal*Signal;
 
         if(!state.GetDerivedData("Max dm/dt",dummy_value)) {
             state.AddDerivedData("Max dm/dt",max_dm_dt_output.cache.value);
@@ -792,8 +790,7 @@ void MF_CurrentFlowEvolver::UpdateDerivedOutputs(const Oxs_SimState& state)
           = delta_E_output.cache.state_id
             = mr_output.cache.state_id
               = Signal_output.cache.state_id
-                = ABCD_output.cache.state_id
-                  = state.Id();
+                = state.Id();
 }
 
 void MF_CurrentFlowEvolver::ComputeConductance(const Oxs_SimState& state)
@@ -987,7 +984,6 @@ OC_BOOL MF_CurrentFlowEvolver::Init()
     current_density_output.Register(director,-5);
     mr_output.Register(director,-5);
     Signal_output.Register(director,-5);
-    ABCD_output.Register(director,-5);
     // Free scratch space allocated by previous problem (if any)
     vtmpA.Release();
     vtmpB.Release();
